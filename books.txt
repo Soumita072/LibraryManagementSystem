@@ -1,0 +1,5 @@
+Physics,H.C.Verma,false
+CN,Arpita C,false
+Clean Code,Robert C. Martin,false
+Artificial Intelligence: A Modern Approach,Stuart Russell, Peter Norvig,false
+Think and Grow Rich,Napoleon Hill,false
