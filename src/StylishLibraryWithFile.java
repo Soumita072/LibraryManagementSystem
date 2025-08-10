@@ -24,6 +24,7 @@ public class StylishLibraryWithFile extends JFrame {
     private JTextField titleField, authorField, searchField;
 
     private final String FILE_NAME = "books.txt";
+    private final String HISTORY_FILE = "history.txt";
 
     public StylishLibraryWithFile() {
         setTitle("📚 Library Management System");
@@ -88,10 +89,23 @@ public class StylishLibraryWithFile extends JFrame {
         // Bottom Panel
         JPanel bottomPanel = new JPanel();
         bottomPanel.setBackground(bgColor);
+
         JButton borrowButton = createButton("📖 Borrow", secondaryColor, Color.WHITE);
         JButton returnButton = createButton("↩ Return", dangerColor, Color.WHITE);
+        JButton deleteButton = createButton("🗑 Delete Book", dangerColor, Color.WHITE);
+        JButton editButton = createButton("✏ Edit Book", buttonColor, Color.WHITE);
+        JButton historyButton = createButton("📜 View History", primaryColor, Color.WHITE);
+        JButton exportButton = createButton("💾 Export CSV", secondaryColor, Color.WHITE);
+        JButton sortButton = createButton("🔽 Sort by Title", primaryColor, Color.WHITE);
+
         bottomPanel.add(borrowButton);
         bottomPanel.add(returnButton);
+        bottomPanel.add(editButton);
+        bottomPanel.add(deleteButton);
+        bottomPanel.add(historyButton);
+        bottomPanel.add(exportButton);
+        bottomPanel.add(sortButton);
+
         add(bottomPanel, BorderLayout.SOUTH);
 
         // Load data from file
@@ -133,6 +147,7 @@ public class StylishLibraryWithFile extends JFrame {
                     if (b.title.equals(bookTitle)) {
                         if (!b.borrowed) {
                             b.borrowed = true;
+                            logHistory("Borrowed", b.title);
                             JOptionPane.showMessageDialog(this, "You borrowed: " + b.title);
                         } else {
                             JOptionPane.showMessageDialog(this, "Book is already borrowed!");
@@ -156,6 +171,7 @@ public class StylishLibraryWithFile extends JFrame {
                     if (b.title.equals(bookTitle)) {
                         if (b.borrowed) {
                             b.borrowed = false;
+                            logHistory("Returned", b.title);
                             JOptionPane.showMessageDialog(this, "Book returned: " + b.title);
                         } else {
                             JOptionPane.showMessageDialog(this, "This book was not borrowed!");
@@ -168,6 +184,69 @@ public class StylishLibraryWithFile extends JFrame {
             } else {
                 JOptionPane.showMessageDialog(this, "Please select a book from the table!");
             }
+        });
+
+        // Delete Book
+        deleteButton.addActionListener(e -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow >= 0) {
+                String bookTitle = tableModel.getValueAt(selectedRow, 0).toString();
+                books.removeIf(b -> b.title.equals(bookTitle));
+                saveBooksToFile();
+                updateTable();
+                JOptionPane.showMessageDialog(this, "Book deleted: " + bookTitle);
+            } else {
+                JOptionPane.showMessageDialog(this, "Please select a book to delete!");
+            }
+        });
+
+        // Edit Book
+        editButton.addActionListener(e -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow >= 0) {
+                String oldTitle = tableModel.getValueAt(selectedRow, 0).toString();
+                String oldAuthor = tableModel.getValueAt(selectedRow, 1).toString();
+
+                String newTitle = JOptionPane.showInputDialog(this, "Enter new title:", oldTitle);
+                String newAuthor = JOptionPane.showInputDialog(this, "Enter new author:", oldAuthor);
+
+                if (newTitle != null && !newTitle.trim().isEmpty() && newAuthor != null && !newAuthor.trim().isEmpty()) {
+                    for (Book b : books) {
+                        if (b.title.equals(oldTitle)) {
+                            b.title = newTitle;
+                            b.author = newAuthor;
+                            break;
+                        }
+                    }
+                    saveBooksToFile();
+                    updateTable();
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Please select a book to edit!");
+            }
+        });
+
+        // View History
+        historyButton.addActionListener(e -> {
+            StringBuilder history = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new FileReader(HISTORY_FILE))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    history.append(line).append("\n");
+                }
+            } catch (IOException ex) {
+                history.append("No history found.");
+            }
+            JOptionPane.showMessageDialog(this, history.toString(), "Borrow/Return History", JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        // Export CSV
+        exportButton.addActionListener(e -> exportToCSV());
+
+        // Sort by Title
+        sortButton.addActionListener(e -> {
+            books.sort((b1, b2) -> b1.title.compareToIgnoreCase(b2.title));
+            updateTable();
         });
 
         setVisible(true);
@@ -223,6 +302,29 @@ public class StylishLibraryWithFile extends JFrame {
         }
     }
 
+    // Log History
+    private void logHistory(String action, String title) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(HISTORY_FILE, true))) {
+            writer.write(action + ": " + title + " (" + java.time.LocalDateTime.now() + ")");
+            writer.newLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Export to CSV
+    private void exportToCSV() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("library_export.csv"))) {
+            writer.write("Title,Author,Status\n");
+            for (Book b : books) {
+                writer.write(b.title + "," + b.author + "," + (b.borrowed ? "Borrowed" : "Available") + "\n");
+            }
+            JOptionPane.showMessageDialog(this, "Exported to library_export.csv");
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error exporting data!");
+        }
+    }
+    
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new StylishLibraryWithFile());
     }
