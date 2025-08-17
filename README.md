@@ -32,9 +32,8 @@ This project provides a simple yet stylish GUI to manage books in a library, all
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/Soumita072/LibraryManagementSystem.git
-   
-javac StylishLibraryWithFile.java
-java StylishLibraryWithFile
+   git clone https://github.com/Soumita072/LibraryManagementSystem.git 
+   javac StylishLibraryWithFile.java
+   java StylishLibraryWithFile
 
 
